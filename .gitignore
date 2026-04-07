@@ -1,0 +1,25 @@
+# Local overrides (not shared with team)
+settings.local.json
+CLAUDE.local.md
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor artifacts
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+
+# Obsidian vault runtime (created by /setup-vault)
+vault/
+inbox/
+logs/
+config/processed_log.json
+config/entity_registry_extracted.json
+config/master_linklist.json
+config/missing_entities.json
+config/notebook_registry.json

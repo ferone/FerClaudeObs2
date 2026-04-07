@@ -1,0 +1,28 @@
+{
+  "notebooks": [
+    {
+      "id": "",
+      "name": "PH Energy Regulations",
+      "url": "",
+      "description": "All regulatory documents, DOE circulars, ERC orders, and policy analysis",
+      "vault_folders": ["03 - REGULATIONS & POLICY"],
+      "last_synced": null
+    },
+    {
+      "id": "",
+      "name": "BESS Technology Intelligence",
+      "url": "",
+      "description": "Battery storage technology, supplier analysis, and cost trends",
+      "vault_folders": ["05 - TECHNOLOGIES/BESS", "06 - GLOBAL SUPPLIERS/Battery Manufacturers"],
+      "last_synced": null
+    },
+    {
+      "id": "",
+      "name": "Market & Competitor Analysis",
+      "url": "",
+      "description": "WESM data, competitor profiles, and market intelligence",
+      "vault_folders": ["02 - PHILIPPINES ENERGY MARKET", "08 - COMPETITORS"],
+      "last_synced": null
+    }
+  ]
+}

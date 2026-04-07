@@ -1,0 +1,94 @@
+{
+  "name": "philenergy",
+  "display_name": "Philippine Energy Intelligence",
+  "version": "1.0.0",
+  "description": "Philippine energy market intelligence for Vivant Energy Corporation",
+  "entity_categories": [
+    "organizations",
+    "companies_philippines",
+    "suppliers_global",
+    "regulations",
+    "technologies",
+    "market_concepts",
+    "locations_philippines"
+  ],
+  "privacy_zones": [
+    {
+      "path": "10 - VIVANT INTERNAL",
+      "level": "confidential",
+      "external_api": false
+    },
+    {
+      "path": "08 - COMPETITORS",
+      "level": "sensitive",
+      "external_api": "approval_required"
+    },
+    {
+      "path": "13 - ENGINEERING & TECHNICAL",
+      "level": "sensitive",
+      "external_api": "approval_required"
+    }
+  ],
+  "frontmatter_extensions": {
+    "company": ["country", "sector", "market_cap", "founded", "employees", "revenue_usd"],
+    "regulation": ["issuing_body", "document_number", "date_issued", "effective_date", "scope"],
+    "technology": ["maturity", "relevant_sectors", "key_players"],
+    "project": ["developer", "technology", "capacity_mw", "storage_mwh", "location", "grid_zone", "stage", "cod_target", "capex_usd", "tariff_type", "offtaker"],
+    "supplier": ["origin_country", "product_lines", "technology", "tier", "philippine_presence", "warranty_years", "annual_shipments_gw"],
+    "meeting": ["meeting_type", "attendees", "decisions", "action_items"],
+    "procurement": ["category", "stage", "budget_usd", "deadline", "suppliers_invited"],
+    "quotation": ["supplier", "products", "total_price", "currency", "validity_date", "payment_terms"],
+    "engineering": ["discipline", "project", "revision", "approval_status"],
+    "research": ["topic", "methodology", "period", "key_findings"]
+  },
+  "type_inference_patterns": {
+    "regulation": ["DOE", "ERC", "NGCP", "RA", "DC", "circular", "order", "act", "code"],
+    "project": ["project", "MW", "MWh", "construction", "COD"],
+    "analysis": ["analysis", "brief", "report", "forecast", "assessment"],
+    "technology": ["solar", "BESS", "wind", "inverter", "PCS", "SCADA", "battery"],
+    "company": ["company", "corp", "ltd", "inc", "holdings"],
+    "supplier": ["supplier", "manufacturer", "vendor", "OEM"],
+    "brief": ["weekly", "brief", "summary", "digest"],
+    "meeting": ["meeting", "minutes", "transcript", "agenda", "attendees", "MOM"],
+    "procurement": ["tender", "RFP", "RFQ", "bid", "proposal", "evaluation", "procurement"],
+    "quotation": ["quotation", "quote", "pricing", "offer", "commercial proposal", "unit price"],
+    "engineering": ["SIS", "SLD", "sizing", "calculation", "compatibility", "specification", "technical study", "design document"],
+    "research": ["deep dive", "deep analysis", "forecast", "investigation", "topic study", "lessons learned"],
+    "republic_act": ["RA ", "Republic Act"],
+    "doe_circular": ["DC20", "DOE DC", "department circular"],
+    "erc_issuance": ["ERC-Res", "ERC-Case", "ERC resolution"],
+    "energy_plan": ["PEP", "PDP", "NREP", "NTER", "roadmap", "development plan"],
+    "securities_research": ["securities", "brokerage", "investment strategy", "deep report"]
+  },
+  "obsidian_plugins": [
+    "dataview",
+    "templater-obsidian",
+    "smart-connections",
+    "copilot",
+    "graph-analysis",
+    "obsidian-claudian",
+    "folder-notes",
+    "periodic-notes",
+    "obsidian-kanban",
+    "obsidian-excalidraw-plugin",
+    "table-editor-obsidian",
+    "tag-wrangler",
+    "smart-second-brain"
+  ],
+  "ollama": {
+    "endpoint": "http://localhost:11434",
+    "model_extraction": "qwen2.5:32b",
+    "model_enrichment": "qwen2.5:32b",
+    "fallback_model": "qwen2.5:7b"
+  },
+  "processing": {
+    "primary_engine": "claude-code",
+    "fallback_engine": "ollama",
+    "confidential_engine": "ollama",
+    "confidential_mode": "zones",
+    "lm_studio": {
+      "endpoint": "http://127.0.0.1:1234/v1",
+      "model": "google/gemma-4-26b-a4b"
+    }
+  }
+}
