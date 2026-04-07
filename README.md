@@ -31,8 +31,10 @@ Domain packs (`domain-packs/[name]/`) define how a vault is organized for a spec
 
 | Command | Description |
 |---------|-------------|
+| `/claude-ingest` | **The definitive ingestion skill.** Claude vision PDF conversion (tables preserved), Chinese auto-translation, scanned PDF OCR, entity extraction, wikilinks, vault filing |
 | `/setup-vault` | Initialize vault structure from the active domain pack |
-| `/process-docs` | Run the full document pipeline: convert, extract, link, tag, file, validate |
+| `/pdf-to-markdown` | Convert PDFs to markdown with parallel vision agents (10 pages/agent) |
+| `/process-docs` | Quick batch document pipeline: convert, extract, link, tag, file, validate |
 | `/vault-search` | Search vault by keyword, entity, or filename |
 | `/vault-health` | Validate vault integrity (broken links, orphans, frontmatter) |
 | `/create-entity` | Create entity notes from domain pack templates |
@@ -46,6 +48,8 @@ Domain packs (`domain-packs/[name]/`) define how a vault is organized for a spec
 
 | Agent | What It Does |
 |-------|--------------|
+| `@chinese-translator` | Translates Chinese PDFs/docs to English markdown. Parallel page-range splitting for large documents. Energy/battery/PH glossary built in. |
+| `@doc-inspector` | Compares source PDF/HTML against vault markdown to verify conversion completeness. Reports PASS/FAIL/PARTIAL. |
 | `@vault-orchestrator` | Coordinates multi-step vault operations and dispatches specialized agents |
 | `@entity-manager` | Entity extraction, deduplication, and registry management |
 | `@doc-enricher` | AI-powered document enhancement with strict privacy controls |
@@ -55,58 +59,94 @@ Domain packs (`domain-packs/[name]/`) define how a vault is organized for a spec
 
 ## Getting Started
 
-### 1. One-command setup
+### Prerequisites
 
-Clones ferclaudeobs, copies all config into your project, and installs all plugins.
+- [Claude Code](https://claude.com/claude-code) installed (CLI, desktop app, or IDE extension)
+- [Git](https://git-scm.com/) installed
+- [Python 3.10+](https://python.org/) (for document pipeline scripts)
+- Optional: [jq](https://stedolan.github.io/jq/) (for hook scripts)
+- Optional: [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) (for scanned PDF processing)
+- Optional: [Obsidian](https://obsidian.md/) (for viewing the vault)
+
+### Step 1: Clone the repository
+
+```bash
+git clone https://github.com/ferone/FerClaudeObs2.git
+cd FerClaudeObs2
+```
+
+### Step 2: Copy into your project
+
+Copy the ferclaudeobs configuration into any existing project:
 
 **macOS/Linux:**
 ```bash
-cd your-project
-bash <(curl -s https://raw.githubusercontent.com/ferone/ferclaudeobs/main/scripts/setup-project.sh)
+cd /path/to/your-project
+
+# Create .claude directory
+mkdir -p .claude
+
+# Copy all config
+cp /path/to/FerClaudeObs2/settings.json .claude/
+cp -r /path/to/FerClaudeObs2/{rules,skills,agents,hooks,scripts} .claude/
+cp /path/to/FerClaudeObs2/plugins.json .claude/
+cp /path/to/FerClaudeObs2/.gitignore .claude/
+cp /path/to/FerClaudeObs2/CLAUDE.md ./
+cp /path/to/FerClaudeObs2/CLAUDE.local.md.example ./
+cp /path/to/FerClaudeObs2/requirements.txt ./
+
+# Make hooks executable
+chmod +x .claude/hooks/*.sh .claude/scripts/*.sh
+
+# Add local overrides to gitignore
+echo "CLAUDE.local.md" >> .gitignore
 ```
 
 **Windows (PowerShell):**
 ```powershell
-cd your-project
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ferone/ferclaudeobs/main/scripts/setup-project.ps1" -OutFile "$env:TEMP\setup-ferclaudeobs.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-ferclaudeobs.ps1"
+cd C:\path\to\your-project
+
+# Create .claude directory
+New-Item -ItemType Directory -Force -Path .claude
+
+# Copy all config
+Copy-Item C:\path\to\FerClaudeObs2\settings.json .claude\
+Copy-Item -Recurse C:\path\to\FerClaudeObs2\rules .claude\
+Copy-Item -Recurse C:\path\to\FerClaudeObs2\skills .claude\
+Copy-Item -Recurse C:\path\to\FerClaudeObs2\agents .claude\
+Copy-Item -Recurse C:\path\to\FerClaudeObs2\hooks .claude\
+Copy-Item -Recurse C:\path\to\FerClaudeObs2\scripts .claude\
+Copy-Item C:\path\to\FerClaudeObs2\plugins.json .claude\
+Copy-Item C:\path\to\FerClaudeObs2\.gitignore .claude\
+Copy-Item C:\path\to\FerClaudeObs2\CLAUDE.md .\
+Copy-Item C:\path\to\FerClaudeObs2\CLAUDE.local.md.example .\
+Copy-Item C:\path\to\FerClaudeObs2\requirements.txt .\
+
+# Add local overrides to gitignore
+Add-Content .gitignore "CLAUDE.local.md"
 ```
 
-**Or run locally** (if you already have ferclaudeobs cloned):
+### Step 3: Install Python dependencies
+
 ```bash
-bash /path/to/ferclaudeobs/scripts/setup-project.sh /path/to/your-project
+pip install -r requirements.txt
 ```
 
-<details>
-<summary>Manual setup (step by step)</summary>
+### Step 4: Install Claude Code plugins
 
+**macOS/Linux:**
 ```bash
-git clone https://github.com/ferone/ferclaudeobs.git /tmp/ferclaudeobs
-
-cd your-project
-mkdir -p .claude
-
-cp /tmp/ferclaudeobs/settings.json .claude/
-cp -r /tmp/ferclaudeobs/{rules,skills,agents,hooks,scripts} .claude/
-cp /tmp/ferclaudeobs/plugins.json .claude/
-cp /tmp/ferclaudeobs/.gitignore .claude/
-cp /tmp/ferclaudeobs/CLAUDE.md ./
-cp /tmp/ferclaudeobs/CLAUDE.local.md.example ./
-
-chmod +x .claude/hooks/*.sh .claude/scripts/*.sh
-rm -rf /tmp/ferclaudeobs
-
-echo "CLAUDE.local.md" >> .gitignore
-
-# Install plugins (once per machine)
 bash .claude/scripts/install-plugins.sh
 ```
-</details>
 
-### 2. Restart Claude Code
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File .claude\scripts\install-plugins.ps1
+```
 
-Exit and restart your Claude Code session. Skills, agents, and rules are loaded at session start.
+### Step 5: Restart Claude Code and run `/init`
 
-### 3. Run `/init`
+Exit and restart your Claude Code session (skills, agents, and rules are loaded at session start), then run:
 
 ```
 /init
@@ -117,10 +157,45 @@ This will:
 - Detect your project's tech stack (language, framework, linter, test runner)
 - Detect Obsidian vault indicators and recommend vault-specific configs
 - Let you choose which rules, agents, and hooks to enable for this project
-- Clean up README files that waste tokens
 - Delegate to `/setup` to customize configs for your actual tech stack
 
 Every change is confirmed with you before it's applied.
+
+### Step 6 (Optional): Set up an Obsidian vault
+
+If you want to use the knowledge management features:
+
+```bash
+# Copy the domain pack (use philenergy as a starting point, or create your own)
+mkdir -p domain-packs
+cp -r /path/to/FerClaudeObs2/domain-packs/philenergy domain-packs/
+
+# Copy config
+mkdir -p config
+cp /path/to/FerClaudeObs2/config/active-pack.json config/
+```
+
+Then in Claude Code, run:
+```
+/setup-vault
+```
+
+This creates the vault folder structure, templates, and MOC indexes from your domain pack.
+
+### Step 7 (Optional): Ingest documents
+
+Drop PDFs, DOCX, HTML, or MD files and run:
+```
+/claude-ingest --source=inbox/
+```
+
+Or point at any file or folder:
+```
+/claude-ingest --source=/path/to/documents/
+/claude-ingest --source=report.pdf
+```
+
+The skill uses Claude vision for PDFs (preserving all tables perfectly), auto-detects Chinese documents for translation, extracts entities, injects wikilinks, and files each document to the correct vault folder.
 
 ### Troubleshooting
 
@@ -128,13 +203,15 @@ Every change is confirmed with you before it's applied.
 |---------|-----|
 | Skills or agents not showing up | **Restart Claude Code** -- loaded at session start |
 | Hooks not running | Run `chmod +x .claude/hooks/*.sh` and verify `jq` is installed |
-| "jq not found" blocking everything | Install jq: `brew install jq` (macOS) or `apt install jq` (Linux) |
+| "jq not found" blocking everything | Install jq: `brew install jq` (macOS) or `apt install jq` (Linux) or `choco install jq` (Windows) |
 | format-on-save not formatting | Ensure the formatter binary is installed locally and its config file exists |
 | Plugins not installing | Run `claude plugin list` to verify CLI is working, then retry install script |
 | Agent teams not coordinating | Verify `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is in `.claude/settings.json` |
 | `/init` asks to confirm settings.json edits | Expected -- `protect-files.sh` prompts for confirmation when editing settings |
+| Scanned PDFs not converting | Install Tesseract: `choco install tesseract` (Windows) or `brew install tesseract` (macOS) |
+| Tables missing from PDF conversion | Use `/claude-ingest` (Claude vision), not `/process-docs` (pymupdf) |
 
-### 4. Make it yours
+### Make it yours
 
 `/init` + `/setup` gets you 90% of the way. To fine-tune:
 
@@ -161,9 +238,11 @@ All skills auto-trigger when Claude detects the right context. You can also invo
 
 | Command | When It Auto-Triggers | Description |
 |---------|----------------------|-------------|
+| `/claude-ingest` | **Importing any documents** | **The definitive ingestion skill.** Claude vision PDF conversion (preserves tables), Chinese auto-translation, scanned PDF OCR, entity extraction, wikilinks, vault filing |
 | `/setup-vault` | Initializing an Obsidian vault project | Initialize vault structure from domain pack |
-| `/process-docs` | Documents need processing through the pipeline | Run document pipeline (convert, extract, link, tag, file, validate) |
-| `/ingest` | Importing documents from external sources | Per-document pipeline with Chinese auto-translation, flexible input (file/folder/tree), batch summaries |
+| `/pdf-to-markdown` | Converting PDFs with table preservation | Parallel 10-page chunk agents for high-fidelity PDF-to-markdown conversion |
+| `/process-docs` | Quick batch processing of inbox/ | Run document pipeline (convert, extract, link, tag, file, validate) |
+| `/ingest` | Legacy per-document pipeline | Superseded by `/claude-ingest` |
 | `/vault-search` | Searching for vault content | Search vault by keyword, entity, or filename |
 | `/vault-health` | Checking vault integrity | Validate vault integrity, auto-fix issues |
 | `/create-entity` | Creating new entity notes | Create entity notes from domain pack templates |
@@ -297,6 +376,8 @@ ferclaudeobs/
 │   ├── install-plugins.sh              #   Plugin-only installer (macOS/Linux)
 │   ├── install-plugins.ps1             #   Plugin-only installer (Windows)
 │   ├── pipeline.py                     #   Document processing pipeline orchestrator
+│   ├── ingest.py                       #   Automated batch document ingestion
+│   ├── ingest_regulatory.py            #   Specialized regulatory document processor
 │   ├── setup_vault.py                  #   Vault initialization from domain pack
 │   ├── convert_docs.py                 #   Document format conversion
 │   ├── extract_entities.py             #   Entity extraction from documents
@@ -317,6 +398,8 @@ ferclaudeobs/
 ├── skills/                             # Auto-triggering slash commands -> copy to .claude/skills/
 │   ├── init/SKILL.md                   #   /init -- project setup with config selection
 │   ├── setup/SKILL.md                  #   /setup -- scan codebase, customize all config files
+│   ├── claude-ingest/SKILL.md          #   /claude-ingest -- THE definitive document ingestion (Claude vision, tables, Chinese)
+│   ├── pdf-to-markdown/SKILL.md        #   /pdf-to-markdown -- parallel vision PDF conversion with table preservation
 │   ├── debug-fix/SKILL.md              #   /debug-fix -- find and fix bugs from any source
 │   ├── ship/SKILL.md                   #   /ship -- commit, push, PR with confirmations
 │   ├── hotfix/SKILL.md                 #   /hotfix -- emergency production fix, ship fast
@@ -327,8 +410,8 @@ ferclaudeobs/
 │   ├── test-writer/SKILL.md            #   Auto-triggers on new features -- comprehensive tests
 │   ├── parallel/SKILL.md               #   /parallel -- multi-agent parallel task execution
 │   ├── setup-vault/SKILL.md            #   /setup-vault -- initialize vault from domain pack
-│   ├── process-docs/SKILL.md           #   /process-docs -- run document processing pipeline
-│   ├── ingest/SKILL.md                 #   /ingest -- per-document pipeline with Chinese translation, flexible input
+│   ├── process-docs/SKILL.md           #   /process-docs -- quick batch document processing
+│   ├── ingest/SKILL.md                 #   /ingest -- legacy per-document pipeline (use /claude-ingest)
 │   ├── vault-search/SKILL.md           #   /vault-search -- search vault by keyword, entity, or filename
 │   ├── vault-health/SKILL.md           #   /vault-health -- validate vault integrity
 │   ├── create-entity/SKILL.md          #   /create-entity -- create entity notes from templates
@@ -344,7 +427,8 @@ ferclaudeobs/
 │   ├── frontend-designer.md            #   Creates distinctive UI -- anti-AI-slop
 │   ├── doc-reviewer.md                 #   Documentation accuracy and completeness
 │   ├── parallel-executor.md            #   Worker agent for parallel task execution
-│   ├── chinese-translator.md           #   Chinese-to-English document translation with energy glossary
+│   ├── chinese-translator.md           #   Chinese-to-English document translation with domain glossary
+│   ├── doc-inspector.md                #   Verifies PDF/HTML to markdown conversion completeness
 │   ├── vault-orchestrator.md           #   Coordinates multi-step vault pipeline operations
 │   ├── entity-manager.md               #   Entity extraction, deduplication, registry updates
 │   ├── doc-enricher.md                 #   AI-powered document enhancement with privacy controls
